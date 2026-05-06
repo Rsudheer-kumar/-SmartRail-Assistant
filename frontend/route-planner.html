@@ -28,7 +28,26 @@
     </header>
 
     <section class="route-planner">
-        <h2>Available Routes</h2>
+        <h2>Plan Your Journey</h2>
+        
+        <div class="route-input-section">
+            <form id="route-form">
+                <div class="form-group">
+                    <label for="from-city">From:</label>
+                    <input type="text" id="from-city" placeholder="e.g., Hyderabad" required>
+                </div>
+                <div class="form-group">
+                    <label for="to-city">To:</label>
+                    <input type="text" id="to-city" placeholder="e.g., Delhi" required>
+                </div>
+                <div class="form-group">
+                    <label for="travel-date">Travel date:</label>
+                    <input type="date" id="travel-date" required>
+                </div>
+                <button type="submit" class="search-btn">Get Route Plan</button>
+            </form>
+        </div>
+
         <div id="routes-container">
             <!-- Routes will be dynamically loaded here -->
         </div>

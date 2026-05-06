@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Public Transit Scheduler</title>
+    <title>SmartRail Assistant</title>
     <link rel="icon" href="image.png" type="image/png">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+        <a class="back-to-login" href="index.html?showLogin=1" aria-label="Back to login page">&#8592; Back to Login</a>
     <button class="sidebar-toggle" id="sidebar-toggle">
         <svg viewBox="0 0 24 24" width="24" height="24">
           <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"></path>
@@ -15,7 +16,7 @@
       </button>
     
     <div class="sidebar" id="sidebar">
-        <div class="logo">Public Transit Scheduler</div>
+        <div class="logo">SmartRail Assistant</div>
         <button class="new-chat-btn" id="new-chat-btn">
             <span class="btn-icon">+</span> New chat
         </button>
@@ -23,13 +24,6 @@
         <div class="section-title">Recent</div>
         <div class="recent-chats" id="recent-chats">
             <!-- Recent chats will be populated here with delete buttons -->
-        </div>
-        
-        <div class="about-section">
-            <div class="section-title">About Us</div>
-            <div class="team-member">SarvepaliSathvik (12318538)</div>
-            <div class="team-member"> Rongali Pradeep (12316752)</div>
-            <div class="team-member">Manoj Kumar G (12320409)</div>
         </div>
         
         <div class="user-info">
@@ -41,7 +35,7 @@
         <div class="chat-container" id="chat-log">
             <!-- Chat messages will appear here -->
             <div class="welcome-message">
-                <h2>Welcome to Public Transit Scheduler</h2>
+                <h2>Welcome to SmartRail Assistant</h2>
                 <p>Start a new conversation or continue a previous one</p>
             </div>
         </div>
@@ -66,7 +60,7 @@
                 <svg viewBox="0 0 24 24" width="16" height="16" style="margin-right: 5px;">
                     <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" fill="currentColor"/>
                 </svg>
-                Speak Response
+                🗣️ Hear Response
             </button>
             <button id="stop-speech-button" class="option-btn" style="display: none;">
                 <svg viewBox="0 0 24 24" width="16" height="16" style="margin-right: 5px;">
@@ -77,11 +71,11 @@
         </div>
         
         <div class="copyright-notice">
-            &copy; 2025 Public Transit Scheduler. All rights reserved.
+            &copy; 2025 SmartRail Assistant. All rights reserved.
         </div>
     </div>
     
-    <button class="ask-button" onclick="window.location.href='landing.html'">Ask Me Transit Tracker</button>
+    <button class="ask-button" onclick="window.location.href='landing.html'">Ask SmartRail Assistant</button>
     
     <script src="script.js"></script>
 </body>

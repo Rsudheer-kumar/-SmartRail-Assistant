@@ -38,6 +38,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // Open login modal when navigated from chatbot back button
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('showLogin') === '1') {
+        loginModal.style.display = 'block';
+        tabButtons[0].click();
+    }
+
     // Handle signup form submission
     signupForm.addEventListener('submit', async (e) => {
         e.preventDefault();

@@ -1,0 +1,167 @@
+/* Route Planner Specific Styles */
+
+.route-planner {
+  max-width: 900px;
+  margin: 40px auto;
+  padding: 0 20px;
+}
+
+.route-planner h2 {
+  text-align: center;
+  color: #333;
+  margin-bottom: 30px;
+  font-size: 28px;
+}
+
+/* Input Section */
+.route-input-section {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 30px;
+  border-radius: 12px;
+  margin-bottom: 30px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.route-input-section form {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.form-group {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  color: white;
+  font-weight: 600;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.form-group input {
+  padding: 12px 15px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  background: white;
+  color: #333;
+  transition: all 0.3s ease;
+}
+
+.form-group input:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+}
+
+.form-group input::placeholder {
+  color: #999;
+}
+
+/* Search Button */
+.search-btn {
+  padding: 12px 30px;
+  background: white;
+  color: #667eea;
+  border: none;
+  border-radius: 6px;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.search-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+}
+
+.search-btn:active {
+  transform: translateY(0);
+}
+
+/* Route Results */
+.route-info,
+.route-result {
+  background: white;
+  border-radius: 8px;
+  padding: 25px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-left: 5px solid #667eea;
+}
+
+.route-info {
+  border-left-color: #4CAF50;
+  background: #f0f7ff;
+}
+
+.route-result.success {
+  border-left-color: #4CAF50;
+  background: #f8fff9;
+}
+
+.route-result.error {
+  border-left-color: #ff6b6b;
+  background: #fff5f5;
+}
+
+.route-result pre,
+.route-info pre {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  color: #333;
+}
+
+.route-result.error pre {
+  color: #c92a2a;
+  font-weight: 500;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .route-input-section form {
+    flex-direction: column;
+  }
+
+  .form-group {
+    min-width: 100%;
+  }
+
+  .search-btn {
+    width: 100%;
+  }
+
+  .route-planner h2 {
+    font-size: 22px;
+  }
+
+  .route-result pre,
+  .route-info pre {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .route-planner {
+    padding: 0 10px;
+  }
+
+  .route-input-section {
+    padding: 20px;
+  }
+
+  .route-result,
+  .route-info {
+    padding: 15px;
+  }
+}
