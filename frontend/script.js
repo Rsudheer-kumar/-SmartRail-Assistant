@@ -1449,19 +1449,28 @@ const stationCodes = {
     }
 
     function initializeChat() {
+        // Prevent the resume flow from running multiple times per session.
+        // This fixes duplicate "Resuming route plan..." / "Travel Date Selected..." messages.
+        const resumeKey = `resumeDone-${sessionId}`;
+        const alreadyResumed = localStorage.getItem(resumeKey) === '1';
+        if (alreadyResumed) return;
+
         const storedDate = localStorage.getItem(travelDateStorageKey);
-        if (storedDate) {
-            const route = getStoredRouteContext();
-            if (route && route.source && route.destination) {
-                addMessage(`Resuming route plan for ${route.source} to ${route.destination}.`, 'bot-message');
-                addMessage(`Travel Date Selected: ${storedDate}`, 'user-message');
-                showTypingIndicator();
-                setTimeout(() => {
-                    handleUserMessage(`trains from ${route.source} to ${route.destination}`);
-                }, chatPacingDelay);
-            }
+        if (!storedDate) return;
+
+        const route = getStoredRouteContext();
+        if (route && route.source && route.destination) {
+            localStorage.setItem(resumeKey, '1');
+
+            addMessage(`Resuming route plan for ${route.source} to ${route.destination}.`, 'bot-message');
+            addMessage(`Travel Date Selected: ${storedDate}`, 'user-message');
+            showTypingIndicator();
+            setTimeout(() => {
+                handleUserMessage(`trains from ${route.source} to ${route.destination}`);
+            }, chatPacingDelay);
         }
     }
+
 
     window.submitTravelDate = function() {
         const dateInput = document.getElementById('travelDate');
@@ -1738,11 +1747,29 @@ body: JSON.stringify({
     }
 
     function loadChat(chatId) {
-        const chatData = JSON.parse(localStorage.getItem(`chat-${chatId}`)) || [];
-        sessionId = chatId;
+        let chatData = null;
+        try {
+            chatData = JSON.parse(localStorage.getItem(`chat-${chatId}`));
+        } catch (err) {
+            console.warn('Failed to parse stored chat', chatId, err);
+            chatData = null;
+        }
+
+        if (!Array.isArray(chatData)) {
+            // Gracefully handle missing/corrupted stored chats
+            addMessage('Could not load this conversation (it may be deleted or corrupted).', 'bot-error');
+            return;
+        }
+
+        sessionId = String(chatId);
         currentChat = chatData;
         localStorage.setItem('sessionId', sessionId);
-        initializeChat();
+        try {
+            initializeChat();
+        } catch (err) {
+            console.error('Error initializing chat after load:', err);
+            addMessage('An error occurred while loading the conversation.', 'bot-error');
+        }
     }
 
     function deleteChat(chatId) {

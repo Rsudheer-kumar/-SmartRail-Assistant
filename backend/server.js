@@ -1474,6 +1474,13 @@ async function buildLocalTransitResponse(message, sessionId) {
 }
 
 app.use(cors());
+
+// Raw body logger (debug only): capture and print raw request bodies
+// NOTE: Do NOT consume the request stream here, because express.json()/body-parser
+// needs to read the stream. This caused: "InternalServerError: stream is not readable".
+// If you need raw logging, do it behind a flag using a middleware that doesn't interfere
+// with downstream JSON parsing.
+
 app.use(express.json());
 const frontendDir = path.join(__dirname, '../frontend');
 app.use(express.static(frontendDir));
@@ -1844,7 +1851,14 @@ function extractCitiesForTrainContext(message) {
 }
 
 app.post('/api/smart-train-assistant', async (req, res) => {
-  const { message, sessionId, source, destination } = req.body;
+    // Debug: log incoming request body to help trace client issues
+    try {
+        console.log('[/api/smart-train-assistant] Received body:', JSON.stringify(req.body));
+    } catch (e) {
+        console.log('[/api/smart-train-assistant] Received body: <unserializable>');
+    }
+
+    const { message, sessionId, source, destination } = req.body;
   const currentSessionId = sessionId || 'default-session';
 
   if (!message) {
@@ -2121,6 +2135,93 @@ try {
             res.json(docs);
         } catch (err) {
             console.error('List chats error:', err);
+            res.status(500).json({ ok: false, error: err.message });
+        }
+    });
+
+    // Reprocess stored chats through AI to replace fallback bot messages.
+    // Body: { sessionId?: string, limit?: number }
+    app.post('/api/reprocess-chats', express.json(), async (req, res) => {
+        if (!process.env.GEMINI_API_KEY) {
+            return res.status(400).json({ ok: false, error: 'GEMINI_API_KEY not set on server' });
+        }
+
+        try {
+            const { sessionId, limit } = req.body || {};
+            const query = sessionId ? Chat.findOne({ sessionId }) : Chat.find();
+            if (!sessionId) query.sort({ createdAt: -1 }).limit(limit || 200);
+
+            const docs = sessionId ? [await query.exec()] : await query.exec();
+            const model = genAI.getGenerativeModel({ model: geminiModelName });
+
+            const fallbackPatterns = [
+                /unable to process request/i,
+                /could not load the train list/i,
+                /i cannot pull real-time/i,
+                /local transit fallback/i,
+                /i could not load/i
+            ];
+
+            const changed = [];
+
+            for (const doc of docs) {
+                if (!doc) continue;
+
+                // Keep original messages snapshot if not stored
+                if (!doc.originalMessages) {
+                    doc.originalMessages = doc.messages.map(m => ({ ...m }));
+                }
+
+                let updated = false;
+                for (let i = 0; i < doc.messages.length; i++) {
+                    const m = doc.messages[i];
+                    if (!m || !m.sender) continue;
+
+                    const isBot = /bot/i.test(m.sender) || m.sender === 'bot-message';
+                    if (!isBot) continue;
+
+                    const text = String(m.text || '');
+                    const isFallback = fallbackPatterns.some(rx => rx.test(text));
+                    if (!isFallback) continue;
+
+                    // Find previous user message
+                    let userMsg = null;
+                    for (let j = i - 1; j >= 0; j--) {
+                        const prev = doc.messages[j];
+                        if (prev && /user/i.test(prev.sender)) {
+                            userMsg = prev.text;
+                            break;
+                        }
+                    }
+
+                    if (!userMsg) continue;
+
+                    try {
+                        const prompt = `User message: ${userMsg}`;
+                        const result = await model.generateContent(prompt);
+                        const responseText = String(result.response?.text?.() || '').trim();
+                        if (responseText) {
+                            doc.messages[i].text = responseText;
+                            updated = true;
+                            // small delay to avoid flooding the API
+                            await new Promise(r => setTimeout(r, 250));
+                        }
+                    } catch (e) {
+                        console.error('Reprocess error for session', doc.sessionId, e.message || e);
+                    }
+                }
+
+                if (updated) {
+                    doc.reprocessed = true;
+                    doc.reprocessedAt = new Date();
+                    await doc.save();
+                    changed.push(doc.sessionId || String(doc._id));
+                }
+            }
+
+            res.json({ ok: true, reprocessedSessions: changed });
+        } catch (err) {
+            console.error('Reprocess chats error:', err);
             res.status(500).json({ ok: false, error: err.message });
         }
     });
