@@ -1,5 +1,24 @@
 // Show login modal when page loads
 document.addEventListener('DOMContentLoaded', () => {
+    function getAuthApiBase() {
+        const configuredBase = (window.AUTH_API_BASE_URL || '').trim();
+        if (configuredBase) {
+            return configuredBase.replace(/\/$/, '');
+        }
+
+        // Keep local file:// workflow working with a separate auth server.
+        if (window.location.protocol === 'file:') {
+            return 'http://localhost:5000';
+        }
+
+        // In deployment, use same-origin backend.
+        return '';
+    }
+
+    function buildAuthApiUrl(path) {
+        return `${getAuthApiBase()}${path}`;
+    }
+
     const loginModal = document.getElementById('loginModal');
     const updatesModal = document.getElementById('updatesModal');
     const loginBtn = document.getElementById('loginBtn');
@@ -59,7 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         try {
-            const response = await fetch('http://localhost:5000/api/auth/register', {
+            const response = await fetch(buildAuthApiUrl('/api/auth/register'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -92,7 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const password = loginForm.querySelector('input[type="password"]').value;
         
         try {
-            const response = await fetch('http://localhost:5000/api/auth/login', {
+            const response = await fetch(buildAuthApiUrl('/api/auth/login'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -152,7 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!token) return;
 
         try {
-            const response = await fetch('http://localhost:5000/api/auth/user', {
+            const response = await fetch(buildAuthApiUrl('/api/auth/user'), {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }

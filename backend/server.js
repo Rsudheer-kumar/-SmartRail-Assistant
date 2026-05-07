@@ -1327,10 +1327,8 @@ async function buildLocalTransitResponse(message, sessionId) {
 
     if (source && destination) {
         routeContextBySession.set(sessionId, { source, destination });
-    }
-
-    if (source && destination) {
-        return await buildRoutePlanResponse({ source, destination });
+        // Always build a full response for a valid route
+        return await buildRoutePlanResponse({ source, destination }, extractedTravelDate);
     }
 
     if (currentRoute?.source && currentRoute?.destination && (text.includes("route") || text.includes("plan") || text.includes("timing") || text.includes("schedule"))) {
@@ -1477,10 +1475,20 @@ async function buildLocalTransitResponse(message, sessionId) {
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '../frontend')));
+const frontendDir = path.join(__dirname, '../frontend');
+app.use(express.static(frontendDir));
+app.use('/frontend', express.static(frontendDir));
 
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '../frontend', 'chatbot.html'));
+    res.sendFile(path.join(frontendDir, 'chatbot.html'));
+});
+
+app.get('/frontend', (req, res) => {
+    res.sendFile(path.join(frontendDir, 'index.html'));
+});
+
+app.get('/frontend/index.html', (req, res) => {
+    res.sendFile(path.join(frontendDir, 'index.html'));
 });
 
 app.post('/chat', async (req, res) => {
@@ -1836,7 +1844,7 @@ function extractCitiesForTrainContext(message) {
 }
 
 app.post('/api/smart-train-assistant', async (req, res) => {
-  const { message, sessionId } = req.body;
+  const { message, sessionId, source, destination } = req.body;
   const currentSessionId = sessionId || 'default-session';
 
   if (!message) {
@@ -1872,12 +1880,21 @@ app.post('/api/smart-train-assistant', async (req, res) => {
             });
         }
 
-        if (travelDate && currentRoute?.source && currentRoute?.destination) {
-            return res.json({
-                response: await buildRoutePlanResponse(currentRoute, travelDate),
-                sessionId: currentSessionId,
-                fallback: true
-            });
+        if (travelDate) {
+            // Prefer session route, but recover from explicit source/destination if present.
+            const routeForDate = (currentRoute?.source && currentRoute?.destination)
+                ? currentRoute
+                : (source && destination ? { source, destination } : null);
+
+            // If we have a complete route for this date, build date-aware train list.
+            if (routeForDate?.source && routeForDate?.destination) {
+                routeContextBySession.set(currentSessionId, routeForDate);
+                return res.json({
+                    response: await buildRoutePlanResponse(routeForDate, travelDate),
+                    sessionId: currentSessionId,
+                    fallback: true
+                });
+            }
         }
 
     if (route.source && route.destination) {
