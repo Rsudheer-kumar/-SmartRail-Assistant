@@ -1105,20 +1105,25 @@ const stationCodes = {
         return getBotResponse(message).then(res => res).catch(() => randomChoice(localResponses.fallback));
     }
 
-    function getChatEndpoint() {
-        if (window.location.protocol === 'file:') {
-            return 'http://localhost:3000/api/smart-train-assistant';
+    function getApiBase() {
+        const configuredBase = (window.API_BASE_URL || '').trim();
+        if (configuredBase) {
+            return configuredBase.replace(/\/$/, '');
         }
 
-        return '/api/smart-train-assistant';
+        if (window.location.protocol === 'file:') {
+            return 'http://localhost:3000';
+        }
+
+        return '';
+    }
+
+    function getChatEndpoint() {
+        return `${getApiBase()}/api/smart-train-assistant`;
     }
 
     function getChatSaveEndpoint() {
-        if (window.location.protocol === 'file:') {
-            return 'http://localhost:3000/api/chats';
-        }
-
-        return '/api/chats';
+        return `${getApiBase()}/api/chats`;
     }
 
     function initializeChat() {
@@ -1295,17 +1300,19 @@ const stationCodes = {
         // Avoid adding multiple IRCTC buttons in a row
         if (document.querySelector('.irctc-btn')) return null;
 
-        const btn = document.createElement('button');
-        btn.innerText = 'Book on IRCTC 🚆';
-        btn.className = 'irctc-btn';
-        btn.style.margin = '8px 12px';
-        btn.onclick = () => {
-            window.open('https://www.irctc.co.in', '_blank', 'noopener,noreferrer');
-        };
+        const link = document.createElement('a');
+        link.innerText = 'Book on IRCTC 🚆';
+        link.className = 'irctc-btn';
+        link.href = 'https://www.irctc.co.in';
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.style.margin = '8px 12px';
+        link.style.display = 'inline-block';
+        link.style.textDecoration = 'none';
 
-        chatLog.appendChild(btn);
+        chatLog.appendChild(link);
         scrollChatToBottom();
-        return btn;
+        return link;
     }
 
     function formatDateForInput(date) {
@@ -1422,6 +1429,40 @@ const stationCodes = {
         saveChatToMongo();
     }
 
+    function handleDateSelection(date) {
+        if (!date) return;
+
+        const formattedDate = formatDate(date);
+        localStorage.setItem(travelDateStorageKey, formattedDate);
+
+        addMessage(`Travel Date Selected: ${formattedDate}`, 'user-message');
+
+        const route = getStoredRouteContext();
+        if (route && route.source && route.destination) {
+            showTypingIndicator();
+            setTimeout(() => {
+                handleUserMessage(`trains from ${route.source} to ${route.destination}`);
+            }, chatPacingDelay);
+        } else {
+            addMessage(randomChoice(localResponses.route_help), 'bot-message');
+        }
+    }
+
+    function initializeChat() {
+        const storedDate = localStorage.getItem(travelDateStorageKey);
+        if (storedDate) {
+            const route = getStoredRouteContext();
+            if (route && route.source && route.destination) {
+                addMessage(`Resuming route plan for ${route.source} to ${route.destination}.`, 'bot-message');
+                addMessage(`Travel Date Selected: ${storedDate}`, 'user-message');
+                showTypingIndicator();
+                setTimeout(() => {
+                    handleUserMessage(`trains from ${route.source} to ${route.destination}`);
+                }, chatPacingDelay);
+            }
+        }
+    }
+
     window.submitTravelDate = function() {
         const dateInput = document.getElementById('travelDate');
         const date = dateInput ? dateInput.value : '';
@@ -1469,7 +1510,12 @@ const stationCodes = {
                 const response = await fetch(getChatEndpoint(), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: `travel date ${date}`, sessionId })
+body: JSON.stringify({
+                    message: `travel date ${date}`,
+                    sessionId,
+                    source: lastRoute?.source || '',
+                    destination: lastRoute?.destination || ''
+                })
                 });
 
                 if (!response.ok) {
